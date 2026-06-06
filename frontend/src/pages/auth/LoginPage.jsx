@@ -34,7 +34,11 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: 'easeOut' },
+  },
 };
 
 const getLoginErrorMessage = (loginError) => {
@@ -56,6 +60,7 @@ function LoginField({ icon: Icon, label, id, trailing, ...props }) {
   return (
     <motion.label className="register-field" htmlFor={id} variants={itemVariants}>
       <span>{label}</span>
+
       <div className="register-input-shell">
         <Icon aria-hidden="true" size={18} />
         <input id={id} {...props} />
@@ -69,6 +74,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +85,11 @@ export function LoginPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -90,12 +100,20 @@ export function LoginPage() {
     try {
       const session = await login(form.email, form.password);
       const requestedAdminRoute = redirectTo.startsWith('/admin');
-      const destination = session.user?.rol === 'ADMIN'
-        ? (requestedAdminRoute ? redirectTo : '/admin')
-        : (requestedAdminRoute ? '/perfil' : redirectTo);
-      navigate(destination, { replace: true });
-      const destination = session.user?.rol === 'ADMIN' ? '/admin' : redirectTo;
-      navigate(destination, { replace: true, state: redirectState });
+
+      const destination =
+        session.user?.rol === 'ADMIN'
+          ? requestedAdminRoute
+            ? redirectTo
+            : '/admin'
+          : requestedAdminRoute
+            ? '/perfil'
+            : redirectTo;
+
+      navigate(destination, {
+        replace: true,
+        state: redirectState,
+      });
     } catch (loginError) {
       setError(getLoginErrorMessage(loginError));
     } finally {
@@ -117,6 +135,7 @@ export function LoginPage() {
         >
           <div className="register-hero-media login-hero-media" />
           <div className="register-hero-overlay" />
+
           <motion.div
             className="register-floating register-floating-top"
             animate={{ y: [0, -10, 0] }}
@@ -125,6 +144,7 @@ export function LoginPage() {
             <Sparkles size={18} />
             Bienestar reservado para ti
           </motion.div>
+
           <motion.div
             className="register-floating register-floating-bottom"
             animate={{ y: [0, 12, 0] }}
@@ -136,7 +156,9 @@ export function LoginPage() {
 
           <div className="register-hero-content">
             <span className="register-eyebrow">Acceso privado</span>
+
             <h2>Vuelve a tu espacio de cuidado personal.</h2>
+
             <p>
               Ingresa para reservar, revisar tus próximas sesiones y mantener tu experiencia Style & Beauty siempre a mano.
             </p>
@@ -170,10 +192,13 @@ export function LoginPage() {
         >
           <motion.div className="register-heading" variants={itemVariants}>
             <span className="register-eyebrow">Bienvenida nuevamente</span>
+
             <h1 id="login-title">
               Accede a tu espacio <span>Style & Beauty</span>
             </h1>
+
             <div className="register-shine" aria-hidden="true" />
+
             <p>
               Continúa tu experiencia de bienestar, administra tus reservas y descubre beneficios pensados para ti.
             </p>
@@ -193,6 +218,7 @@ export function LoginPage() {
                 autoComplete="email"
                 required
               />
+
               <LoginField
                 icon={Lock}
                 label="Contraseña"
@@ -233,7 +259,10 @@ export function LoginPage() {
             </Button>
 
             <p className="register-login-note">
-              ¿Aún no tienes cuenta? <NavLink className="text-link" to="/registro">Crear cuenta de cliente</NavLink>
+              ¿Aún no tienes cuenta?{' '}
+              <NavLink className="text-link" to="/registro">
+                Crear cuenta de cliente
+              </NavLink>
             </p>
           </motion.form>
         </motion.section>
