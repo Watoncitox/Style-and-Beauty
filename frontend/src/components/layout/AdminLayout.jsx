@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
   Bell,
@@ -51,13 +51,8 @@ const adminGroups = [
 export function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
   const [isOpen, setIsOpen] = useState(false);
+
   const profileQuery = useQuery({
     queryKey: ['my-profile'],
     queryFn: profileService.getMyProfile,
@@ -65,13 +60,24 @@ export function AdminLayout() {
     retry: false,
     staleTime: 1000 * 60,
   });
+
   const today = useMemo(
-    () => new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date()),
+    () =>
+      new Intl.DateTimeFormat('es-CL', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+      }).format(new Date()),
     [],
   );
-  const profileName = [profileQuery.data?.nombre, profileQuery.data?.apellidos].filter(Boolean).join(' ');
+
+  const profileName = [profileQuery.data?.nombre, profileQuery.data?.apellidos]
+    .filter(Boolean)
+    .join(' ');
+
   const adminName = profileName || user?.nombre || user?.displayName || user?.email || 'Administracion';
   const adminRole = profileQuery.data?.rol || profileQuery.data?.tipoPerfil || user?.rol || 'ADMIN';
+
   const initials = adminName
     .split(' ')
     .slice(0, 2)
@@ -97,8 +103,7 @@ export function AdminLayout() {
   const handleLogout = async () => {
     closeOverlay();
     await logout();
-    queryClient.clear();
-    navigate('/login', { replace: true });
+    navigate('/login');
   };
 
   return (
@@ -111,13 +116,20 @@ export function AdminLayout() {
         aria-label="Menu administrativo"
       >
         <div className="admin-brand">
-          <button type="button" className="admin-brand-mark" onClick={() => setIsOpen(true)} aria-label="Style & Beauty Admin Center">
+          <button
+            type="button"
+            className="admin-brand-mark"
+            onClick={() => setIsOpen(true)}
+            aria-label="Style & Beauty Admin Center"
+          >
             <Sparkles size={18} />
           </button>
+
           <div>
             <strong>Style & Beauty</strong>
             <small>Admin center</small>
           </div>
+
           <div className="admin-sidebar-controls">
             <button type="button" onClick={closeOverlay} aria-label="Cerrar menu administrativo" title="Cerrar menu">
               <X size={18} />
@@ -129,6 +141,7 @@ export function AdminLayout() {
           {adminGroups.map((group) => (
             <div className="admin-nav-group" key={group.label}>
               <span>{group.label}</span>
+
               {group.links.map(({ to, label, icon: Icon }) => (
                 <NavLink key={to} to={to} end={to === '/admin'} onClick={closeOverlay}>
                   <Icon size={18} />
@@ -141,29 +154,21 @@ export function AdminLayout() {
 
         <div className="admin-sidebar-footer">
           <NavLink to="/admin/perfil" className="admin-user-card" onClick={closeOverlay}>
-            <div className="admin-avatar" aria-hidden="true">{initials || 'AD'}</div>
+            <div className="admin-avatar" aria-hidden="true">
+              {initials || 'AD'}
+            </div>
+
             <div className="admin-user-copy">
               <strong>{adminName}</strong>
               <small>{adminRole}</small>
             </div>
+
             <UserRound size={17} aria-hidden="true" />
           </NavLink>
+
           <button type="button" className="admin-logout-button" onClick={handleLogout}>
             <LogOut size={16} />
             Cerrar sesion
-          <div className="admin-avatar" aria-hidden="true">{initials || 'AD'}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <strong>{adminName}</strong>
-            <small>{user?.rol || 'ADMIN'}</small>
-          </div>
-          <button
-            type="button"
-            className="admin-logout-btn"
-            onClick={handleLogout}
-            aria-label="Cerrar sesion"
-            title="Cerrar sesion"
-          >
-            <LogOut size={17} />
           </button>
         </div>
       </aside>
@@ -180,23 +185,28 @@ export function AdminLayout() {
           >
             <Menu size={19} />
           </button>
+
           <div>
             <span className="admin-date">{today}</span>
             <h1>Panel administrativo</h1>
           </div>
+
           <label className="admin-search">
             <Search size={17} />
             <input type="search" placeholder="Buscar reservas, clientes o servicios" aria-label="Buscar dentro del admin" />
           </label>
+
           <div className="admin-topbar-actions">
             <button type="button" className="admin-icon-button" aria-label="Ver notificaciones">
               <Bell size={18} />
               <span />
             </button>
+
             <NavLink to="/admin/agenda" className="admin-quick-create">
               <Plus size={17} />
               Nueva reserva
             </NavLink>
+
             <button
               type="button"
               className="admin-icon-button admin-logout-topbar"
@@ -214,7 +224,9 @@ export function AdminLayout() {
         </main>
       </div>
 
-      {isOpen && <button type="button" className="admin-scrim" aria-label="Cerrar menu" onClick={() => setIsOpen(false)} />}
+      {isOpen && (
+        <button type="button" className="admin-scrim" aria-label="Cerrar menu" onClick={() => setIsOpen(false)} />
+      )}
     </section>
   );
 }
