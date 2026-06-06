@@ -4,8 +4,11 @@ function fullName(person) {
   return `${person.nombre || ''} ${person.apellidos || ''}`.trim() || 'Especialista';
 }
 
-export function ProfessionalProfiles({ professionals = [], emptyText = 'Pronto asignaremos especialistas para esta categoria.' }) {
-export function ProfessionalProfiles({ professionals = [], emptyText = 'Pronto asignaremos especialistas para esta categoria.', onSelect }) {
+export function ProfessionalProfiles({
+  professionals = [],
+  emptyText = 'Pronto asignaremos especialistas para esta categoria.',
+  onSelect,
+}) {
   return (
     <div className="professional-profiles">
       {professionals.length === 0 ? (
@@ -14,10 +17,17 @@ export function ProfessionalProfiles({ professionals = [], emptyText = 'Pronto a
         professionals.map((member) => (
           <article key={member.idPersona || member.idStaff || member.idAuth} className="professional-profile">
             <SafeImage src={member.imageUrl || member.fotoUrl || member.foto} alt={fullName(member)} />
+
             <div>
               <h3>{fullName(member)}</h3>
+
               <span>{member.especialidad?.nombre || 'Especialista'}</span>
-              <p>{member.descripcionPerfil || member.especialidad?.descripcion || 'Especialista certificado del equipo Style & Beauty.'}</p>
+
+              <p>
+                {member.descripcionPerfil ||
+                  member.especialidad?.descripcion ||
+                  'Especialista certificado del equipo Style & Beauty.'}
+              </p>
 
               <div style={{ marginTop: '0.8rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 {member.cvUrl && (
@@ -25,8 +35,10 @@ export function ProfessionalProfiles({ professionals = [], emptyText = 'Pronto a
                     Ver CV
                   </a>
                 )}
+
                 {onSelect && (
                   <button
+                    type="button"
                     onClick={() => onSelect(member)}
                     className="button button-sm"
                     style={{ marginLeft: 'auto' }}
