@@ -1,4 +1,4 @@
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, CalendarDays, Clock } from 'lucide-react';
 import { Reveal } from '../../components/animations/Reveal.jsx';
@@ -6,15 +6,20 @@ import { ProfessionalProfiles } from '../../components/services/ProfessionalProf
 import { Loader } from '../../components/ui/Loader.jsx';
 import { SafeImage } from '../../components/ui/SafeImage.jsx';
 import { catalogService } from '../../services/catalogService.js';
-import { profileService } from '../../services/profileService.js';
-import { categorySlug, findCategoryBySlug, groupByCategory, normalizeCategory } from '../../utils/categoryUtils.js';
 import { normalizeProfessional } from '../../hooks/useProfessionals.js';
 import { categorySlug, findCategoryBySlug, groupByCategory } from '../../utils/categoryUtils.js';
 
 function servicePrice(service) {
   const value = service?.precio_total ?? service?.precio ?? service?.price;
-  if (value === undefined || value === null || value === '') return 'Consultar';
-  return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
+
+  if (value === undefined || value === null || value === '') {
+    return 'Consultar';
+  }
+
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+  }).format(value);
 }
 
 function serviceDuration(service) {
@@ -40,7 +45,11 @@ function serviceMatchesSlug(service, slug) {
 export function ServiceDetailPage() {
   const { categoria, servicio } = useParams();
   const navigate = useNavigate();
-  const servicesQuery = useQuery({ queryKey: ['services'], queryFn: catalogService.listServices });
+
+  const servicesQuery = useQuery({
+    queryKey: ['services'],
+    queryFn: catalogService.listServices,
+  });
 
   const services = Array.isArray(servicesQuery.data) ? servicesQuery.data : [];
   const grouped = groupByCategory(services);
@@ -50,18 +59,18 @@ export function ServiceDetailPage() {
   const service = categoryServices.find((item) => serviceMatchesSlug(item, servicio));
 
   const serviceId = service?.id_servicio || service?.idServicio || service?.id;
+
   const specialistsQuery = useQuery({
     queryKey: ['service-specialists', serviceId],
     queryFn: () => catalogService.listProfessionalsByService(serviceId),
-    enabled: !!serviceId,
+    enabled: Boolean(serviceId),
   });
 
   const rawSpecialists = Array.isArray(specialistsQuery.data) ? specialistsQuery.data : [];
   const specialists = rawSpecialists.map((member, idx) => normalizeProfessional(member, idx));
 
-  // Only block render on services loading — specialists query may be disabled (no serviceId yet)
   const isServicesLoading = servicesQuery.isLoading;
-  const isSpecialistsLoading = !!serviceId && specialistsQuery.isFetching;
+  const isSpecialistsLoading = Boolean(serviceId) && specialistsQuery.isFetching;
 
   if (isServicesLoading || isSpecialistsLoading) {
     return (
@@ -86,6 +95,7 @@ export function ServiceDetailPage() {
           <ArrowLeft size={16} />
           Servicios
         </Link>
+
         <p className="admin-alert">El servicio solicitado no existe en el catalogo.</p>
       </section>
     );
@@ -94,19 +104,37 @@ export function ServiceDetailPage() {
   return (
     <section className="service-detail-page">
       <div className="service-detail-banner">
-        <SafeImage className="service-detail-banner-image" src={serviceImage(service)} alt={service.nombre || service.name || 'Servicio'} />
+        <SafeImage
+          className="service-detail-banner-image"
+          src={serviceImage(service)}
+          alt={service.nombre || service.name || 'Servicio'}
+        />
+
         <div className="service-detail-banner-overlay" />
+
         <div className="service-detail-banner-inner">
           <Link className="service-detail-back" to={`/servicios/${categorySlug(category)}`}>
             <ArrowLeft size={16} />
             {category}
           </Link>
+
           <span className="card-kicker">{category}</span>
+
           <h1>{service.nombre || service.name || 'Servicio'}</h1>
-          <p>{service.descripcion || service.description || 'Atencion personalizada con tecnica profesional y seguimiento cercano.'}</p>
+
+          <p>
+            {service.descripcion ||
+              service.description ||
+              'Atencion personalizada con tecnica profesional y seguimiento cercano.'}
+          </p>
+
           <div className="service-detail-meta">
             <strong>{servicePrice(service)}</strong>
-            <span><Clock size={15} /> {serviceDuration(service)} min</span>
+
+            <span>
+              <Clock size={15} />
+              {serviceDuration(service)} min
+            </span>
           </div>
         </div>
       </div>
@@ -115,8 +143,15 @@ export function ServiceDetailPage() {
         <div className="service-detail-content">
           <section className="service-description-panel">
             <span className="card-kicker">Detalle del servicio</span>
+
             <h2>{service.nombre || service.name || 'Servicio personalizado'}</h2>
-            <p>{service.detallerservicio || service.description || 'Este servicio se adapta al diagnostico del profesional y a tus preferencias.'}</p>
+
+            <p>
+              {service.detallerservicio ||
+                service.description ||
+                'Este servicio se adapta al diagnostico del profesional y a tus preferencias.'}
+            </p>
+
             <Link className="button button-sm" to="/reservar">
               <CalendarDays size={16} />
               Reservar
@@ -125,11 +160,20 @@ export function ServiceDetailPage() {
 
           <section className="service-professionals-section">
             <span className="card-kicker">Profesionales</span>
+
             <h2>Especialistas disponibles</h2>
+
             <ProfessionalProfiles
               professionals={specialists}
               emptyText="Pronto asignaremos especialistas para este servicio."
-              onSelect={(prof) => navigate('/reservar', { state: { service, professional: prof.raw || prof } })}
+              onSelect={(prof) =>
+                navigate('/reservar', {
+                  state: {
+                    service,
+                    professional: prof.raw || prof,
+                  },
+                })
+              }
             />
           </section>
         </div>
