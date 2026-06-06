@@ -28,20 +28,24 @@ export function AuthProvider({ children }) {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [user, setUserState] = useState(readStoredUser);
 
-  const setSession = useCallback((session) => {
-    if (!session?.user) {
-      clearStoredSession();
-      queryClient.clear();
-      setUserState(null);
-      return;
-    }
+  const setSession = useCallback(
+    (session) => {
+      if (!session?.user) {
+        clearStoredSession();
+        queryClient.clear();
+        setUserState(null);
+        return;
+      }
 
-    if (session.token) {
-      window.localStorage.setItem(TOKEN_KEY, session.token);
-    }
-    window.localStorage.setItem(SESSION_USER_KEY, JSON.stringify(session.user));
-    setUserState(session.user);
-  }, [queryClient]);
+      if (session.token) {
+        window.localStorage.setItem(TOKEN_KEY, session.token);
+      }
+
+      window.localStorage.setItem(SESSION_USER_KEY, JSON.stringify(session.user));
+      setUserState(session.user);
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
     return onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
@@ -66,41 +70,58 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleAuthExpired = () => {
       setSession(null);
+
       firebaseAuthService.logout().catch((err) => {
         console.error('Firebase logout after auth failure failed', err);
       });
     };
-    const handleAuthExpired = () => setSession(null);
+
     window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
-    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+    };
   }, [setSession]);
 
-  const login = useCallback(async (email, password) => {
-    const session = await firebaseAuthService.login(email, password);
-    setSession(session);
-    return session;
-  }, [setSession]);
+  const login = useCallback(
+    async (email, password) => {
+      const session = await firebaseAuthService.login(email, password);
+      setSession(session);
+      return session;
+    },
+    [setSession],
+  );
 
-  const registerClient = useCallback(async ({ email, password, profile }) => {
-    await profileService.validateAvailability({ ...profile, tipoPerfil: 'CLIENTE' });
-    const created = await firebaseAuthService.register(email, password);
-    await authService.registerClient({ uid: created.user.uid });
+  const registerClient = useCallback(
+    async ({ email, password, profile }) => {
+      await profileService.validateAvailability({ ...profile, tipoPerfil: 'CLIENTE' });
 
-    let session = null;
-    for (let attempt = 1; attempt <= ROLE_CLAIM_RETRIES; attempt += 1) {
-      session = await firebaseAuthService.refreshSession();
-      if (session?.user?.rol === 'CLIENTE') break;
-      await wait(ROLE_CLAIM_RETRY_DELAY_MS);
-    }
+      const created = await firebaseAuthService.register(email, password);
+      await authService.registerClient({ uid: created.user.uid });
 
-    if (session?.user?.rol !== 'CLIENTE') {
-      throw new Error('La cuenta se creó, pero el rol CLIENTE aún no está disponible. Intenta iniciar sesión nuevamente.');
-    }
+      let session = null;
 
-    setSession(session);
-    await profileService.createProfile(profile);
-    return session;
-  }, [setSession]);
+      for (let attempt = 1; attempt <= ROLE_CLAIM_RETRIES; attempt += 1) {
+        session = await firebaseAuthService.refreshSession();
+
+        if (session?.user?.rol === 'CLIENTE') {
+          break;
+        }
+
+        await wait(ROLE_CLAIM_RETRY_DELAY_MS);
+      }
+
+      if (session?.user?.rol !== 'CLIENTE') {
+        throw new Error('La cuenta se creó, pero el rol CLIENTE aún no está disponible. Intenta iniciar sesión nuevamente.');
+      }
+
+      setSession(session);
+      await profileService.createProfile(profile);
+
+      return session;
+    },
+    [setSession],
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -111,7 +132,15 @@ export function AuthProvider({ children }) {
   }, [setSession]);
 
   const value = useMemo(
-    () => ({ user, login, registerClient, setSession, logout, isAuthenticated: Boolean(user), isAuthReady }),
+    () => ({
+      user,
+      login,
+      registerClient,
+      setSession,
+      logout,
+      isAuthenticated: Boolean(user),
+      isAuthReady,
+    }),
     [user, login, registerClient, setSession, logout, isAuthReady],
   );
 
@@ -120,8 +149,10 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+
   return context;
 }
